@@ -1,0 +1,35 @@
+1: define a character 
+
+
+int A[] ={  1,
+	   1 1,
+	  11111,
+	  1   1,
+	  1   1,};
+
+//size of the array is 5
+5x5 
+
+using 0's and 1's I can turn off and on pixels within a 5x5 grid.
+
+00100
+00100
+00100
+00000  
+00100   = !
+
+
+2: loop through 0's are pixels (led's) that are off and 1's are pixels (led's) that are on!!
+                                                                  01000
+- we need to loop over each element in the array so for example: ,-----,
+is one array index we need to go through each element (the 0's and 1's) in that index to determine which led's need to be off or on in this case (from left to right) the second one for this row
+
+- we will need two array's one to push the index value into to parse one by one and the main one for each character.
+
+#define sizeArray
+
+void drawScreen(int Byte[]){
+	
+	for(int i=0;i< sizeof() )
+
+}

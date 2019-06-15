@@ -1,5 +1,5 @@
 #include <TimerOne.h>
-//code the I am using as a base written by nebarnix, you're the best <3
+
 /*
   Scrounged LED sign found at ER 2 by HeatSync Labs.
 
@@ -16,6 +16,12 @@
 
 #define TOP 0
 #define BOT 1
+
+int A[] ={00100,
+          01001,
+          01111,
+          01001,
+          01001};
 
 #define bit0 B00000001
 #define bit1 B00000010
@@ -53,7 +59,7 @@
 #define CLK_US 0
 // the setup function runs once when you press reset or power the board
 
-#define VisDuration 1000 //this controls the overall brightness, don't go above 7500 or it gets flickery
+#define VisDuration 500 //this controls the overall brightness, don't go above 7500 or it gets flickery
 //const int Height = 14; //top bit of each byte half is not shown!
 #define Height 14
 #define Width 36
@@ -170,7 +176,7 @@ void loop() {
   #ifdef HIGHLIFE
   if(micros() - time2 > 30000000)
   #endif
-     {
+    {
      time2 = micros();
      for(int x=1; x < Width-1; x++)
        {
@@ -182,9 +188,11 @@ void loop() {
         }
        }
      }
-  AdvanceGameOfLife(); 
-          
-  //SHIFT BOTTOM DATA    
+
+    //writeATest();
+  //SHIFT BOTTOM DATA 
+  drawScreen(A,false); 
+  
   //writeFrameBuffer(BOT);
   //SHOW BOTTOM HALF
   //PORTB |= BOTP_EN;  PORTB &= ~TOPP_EN;
@@ -325,131 +333,88 @@ void writeWordBuffer(unsigned int Word, int col)
     fbuffer[col] |= Word;
 }
 
-void writeByte(char Byte)
+void drawScreen(int Byte[],boolean space)
+{ 
+char board[Width][Height];
+
+  for(int x = 0; x < 4; x++)
+    {
+    for(int y = 0; y < 4; y++)
+      {
+      if(board[x][y] == 1){
+     
+            putPixel(x,y);
+         
+      }else{
+            clearPixel(x,y);
+
+      }
+      }
+    }
+}
+       
+
+      
+ /* for(int x =0;x<5;x++){
+    for(int y =0;y<5;y++){
+      for(int i =0;i<Byte;i++){
+        if(Byte[i]=1){
+          putPixel(x,y);
+        }else{
+          clearPixel(x,y);
+
+    }
+    }
+    }
+  }*/
+
+void writeByte(byte Byte[])
 {
   unsigned char RegShadow;
-  for (long row = 0; row < 7; row++)
+  for (long row = 0; row < 5; row++)
   {
-    if (Byte & 0x1 == 0x1)
-    {
-      //Clock in a differential 1
-      RegShadow = PORTD | DATAP_P | LATCHP_P;
-      PORTD = RegShadow & ~(DLP_N);
-    }
-    else
-    {
-      //Clock in a differential 0
-      RegShadow = PORTD | DLP_N;
-      PORTD = RegShadow & ~(DATAP_P | LATCHP_P);
-    }
-
-    //Clock in data, but set and clear the differential
-    //clock bits at the same time using a shadow reg
-    RegShadow = PORTD | CLOCKP_P;
-    PORTD = RegShadow & ~CLOCKP_N;
-
-    //clear data lines back to zero (we don't really need this)
-    //RegShadow = PORTD | DLP_N;
-    //PORTD = RegShadow & ~(DATAP_P | LATCHP_P);
-
-    //Reset Clock, but set and clear the differential
-    //clock bits at the same time using a shadow reg
-    RegShadow = PORTD | CLOCKP_N;
-    PORTD = RegShadow & ~CLOCKP_P;
-
-    Byte = Byte >> 1; //Get the next bit ready
+     for (byte a = 0; a < 5; a++)    // count next row
+     {
+          
+         //Byte = (Byte[row] >> a) & 0x01;
+         //putPixel(row,a);
+     }
+     //Get the next bit ready
   }
 }
 
-void AdvanceGameOfLife()
-{
-  //commented code wraps around edges, but is way too slow on the arduino as-is. Maybe faster to not modulo??
-char board[Width][Height];
-  char total = 0;
-  //int cellValue;
+void writeATest(){
+ char board[Width][Height];
+
   for(int x = 0; x < Width; x++)
     {
     for(int y = 0; y < Height; y++)
       {
-      total = 0;
-      //cellValue = (fbuffer[x] & (1<<y)) >> y; current cell state is not actually used!
-      //get cell neighbors by looping around the cell
-      //left 3
-      /*
-      if(getPixel((x-1+Width)%Width, y) == true) total++;
-      if(getPixel((x-1+Width)%Width, (y-1+Height)%Height) == true) total++;
-      if(getPixel((x-1+Width)%Width, (y+1)%Height) == true) total++;
-      */
-
-      if(getPixel(x-1, y) == true) total++;
-      if(getPixel(x-1, y-1) == true) total++;
-      if(getPixel(x-1, y+1) == true) total++;
-
-      //right 3
-      /*
-      if(getPixel((x+1)%Width, y) == true) total++;
-      if(getPixel((x+1)%Width, (y-1+Height)%Height) == true) total++;
-      if(getPixel((x+1)%Width, (y+1)%Height) == true) total++;
-      */
-      if(getPixel(x+1, y) == true) total++;
-      if(getPixel(x+1, y-1) == true) total++;
-      if(getPixel(x+1, y+1) == true) total++;
-
-      //above
-      //if(getPixel(x, (y+1)%Height) == true) total++;
-      if(getPixel(x, y+1) == true) total++;
-      //below
-      //if(getPixel(x, (y-1+Height)%Height) == true) total++;
-      if(getPixel(x, y-1) == true) total++;
-
-      //1.STASIS : If, for a given cell, the number of on neighbours is 
-      //exactly two, the cell maintains its status quo into the next 
-      //generation. If the cell is on, it stays on, if it is off, it stays off.
-
-      //2.GROWTH : If the number of on neighbours is exactly three, the cell 
-      //will be on in the next generation. This is regardless of the cell's     current state.
-
-      //3.DEATH : If the number of on neighbours is 0, 1, 4-8, the cell will 
-      //be off in the next generation.
-      
-     //CONWAY
-     #ifndef HIGHLIFE
-      if(total == 2) //do nothing
-         board[x][y] = getPixel(x,y);
-      else if(total == 3) //live!
-        board[x][y] = 1;
-        //putPixel(x,y);
-        
-      else  //died to death
-        //clearPixel(x,y);
-        board[x][y] = 0;
-      #endif
-
-      //HIGHLIFE  
-      #ifdef HIGHLIFE
-      if(total == 2) //do nothing
-         board[x][y] = getPixel(x,y);
-      else if(total == 6 || total == 3) //live!
-        //putPixel(x,y);
-        board[x][y] = 1;        
-      else  //died to death
-        //clearPixel(x,y);
-        board[x][y] = 0;
-      
-      #endif
-      }
-    }
-  //Output Board  
+      if(board[x][y] == 1){
+         putPixel(35,8);
+         putPixel(35,9);
+         putPixel(35,10);
+         putPixel(35,11);
+         putPixel(35,12);
+         putPixel(35,13);
   
-  for(int x = 0; x < Width; x++)
-    {
-    for(int y = 0; y < Height; y++)
-      {
-      if(board[x][y] == 1)
-         putPixel(x,y);
-      else
+         putPixel(34,7);
+         putPixel(33,6);
+         putPixel(32,7);
+
+         putPixel(32,10);
+         putPixel(33,10);
+         putPixel(34,10);
+         
+         putPixel(31,8);
+         putPixel(31,9);
+         putPixel(31,10);
+         putPixel(31,11);
+         putPixel(31,12);
+         putPixel(31,13);
+      }else{
          clearPixel(x,y);
       }
+      }
     }
-    
 }
